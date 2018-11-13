@@ -1,19 +1,15 @@
 import React, { Component } from 'react'
-import {Map, GoogleApiWrapper, InfoWindow, Marker} from 'google-maps-react'
+import {GoogleApiWrapper, InfoWindow, Marker} from 'google-maps-react'
+import CurrentLocation from './Map.js'
 import axios from 'axios'
-
-const mapStyles = {
-  width:'100%',
-  height:'80%'
-}
 
 export class MapContainer extends Component {
   state = {
-    showingInfoWindow: false,
-    activeMarker: {},
-    selectedPlace: {},
-    venues: []
-  }
+      showingInfoWindow: false,
+      activeMarker: {},
+      selectedPlace: {},
+      venues: []
+    }
 
   componentDidMount(){
     this.getVenues()
@@ -48,7 +44,7 @@ export class MapContainer extends Component {
     .then(response => {
       this.setState({
         venues: response.data.response.groups[0].items
-      })
+      }, this.loadMap())
     })
     .catch(error => {
       console.log("Error!" + error)
@@ -56,21 +52,9 @@ export class MapContainer extends Component {
   }
 
   render(){
-    if (!this.props.loaded){
-      return (
-        <div>Loading...</div>
-      )
-    }
     return (
       <div>
-        <Map
-          google = {this.props.google}
-          style = {mapStyles}
-          zoom = {14}
-          initialCenter={{
-            lat: 32.8132922,
-            lng: -96.7521698
-          }}>
+        <CurrentLocation centerAroundCurrentLocation google={this.props.google}>
           <Marker
             onClick = {this.onMarkerClick}
             name = {'Lakewood Shopping Center'}
@@ -83,7 +67,7 @@ export class MapContainer extends Component {
               <h4>{this.state.selectedPlace.name}</h4>
             </div>
           </InfoWindow>
-        </Map>
+        </CurrentLocation>
       </div>
     )
   }

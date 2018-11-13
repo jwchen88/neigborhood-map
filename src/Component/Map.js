@@ -1,89 +1,99 @@
-import React, { Component } from 'react'
-import ReactDOM from 'react-dom'
+import React, { Component }  from 'react';
+import ReactDOM from 'react-dom';
 
 const mapStyles = {
   map: {
-    position:'absolute',
+    position: 'absolute',
     width: '100%',
     height: '80%'
   }
-}
+};
 
 export class CurrentLocation extends Component {
-  constructor(props){
+  constructor(props) {
     super(props);
 
-    const {lat, lng} = this.props.initialCenter;
+    //const { lat, lng } = this.props.initialCenter;
     this.state = {
-      CurrentLocation: {
+      currentLocation: {
+        lat: 32.8132922,
+        lng: -96.7521698
+        /* Current Location
         lat: lat,
         lng: lng
+        */
       }
-    }
+    };
   }
-
-  componentDidMount(){
-    if (this.props.centerAroundCurrentLocation){
-      if (navigator && navigator.geolocation){
+  componentDidMount() {
+    if (this.props.centerAroundCurrentLocation) {
+      if (navigator && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(pos => {
-          const coords = pos.coords;
+          //const coords = pos.coords;
           this.setState({
             currentLocation: {
+              lat: 32.8132922,
+              lng: -96.7521698
+              /*
               lat: coords.latitude,
               lng: coords.longitude
+              */
             }
-          })
-        })
+          });
+        });
       }
     }
     this.loadMap();
   }
 
-  componentDidUpdate(prevProps, prevState){
-    if (prevProps.google !== this.props.google){
+  componentDidUpdate(prevProps, prevState) {
+    if (prevProps.google !== this.props.google) {
       this.loadMap();
     }
-    if (prevState.currentLocation !== this.state.currentLocation){
+    if (prevState.currentLocation !== this.state.currentLocation) {
       this.recenterMap();
     }
   }
 
-  loadMap(){
-    if (this.props && this.props.google){
-      const {google} = this.props;
+  loadMap() {
+    if (this.props && this.props.google) {
+      const { google } = this.props;
       const maps = google.maps;
 
       const mapRef = this.refs.map;
       const node = ReactDOM.findDOMNode(mapRef);
 
-      let {zoom} = this.props;
-      const {lat, lng} = this.state.currentLocation;
-      const center = new maps.LatLng(lat, lng);
-      const mapConfig = Object.assign({},{
-        center: center,
-        zoom: zoom
-      })
+      let { zoom } = this.props;
+      //const { lan, lng } = this.state.currentLocation;
+      const center = new maps.LatLng(32.8132922, -96.7521698); //(lan, lng)
+      const mapConfig = Object.assign(
+        {},
+        {
+          center: center,
+          zoom: zoom
+        }
+      );
       this.map = new maps.Map(node, mapConfig);
     }
   }
 
-  recenterMap(){
+  recenterMap() {
     const map = this.map;
-    const current = this.state.currentLocation;
+    //const current = this.state.currentLocation;
 
     const google = this.props.google;
     const maps = google.maps;
 
-    if(map){
-      let center = new maps.LatLng(current.lat, current.lng);
+    if (map) {
+      let center = new maps.LatLng(32.8132922, -96.7521698);
       map.panTo(center);
     }
   }
 
-  renderChildren(){
-    const {children} = this.props;
+  renderChildren() {
+    const { children } = this.props;
 
-    if(!children) return;
+    if (!children) return;
 
     return React.Children.map(children, c => {
       if (!c) return;
@@ -91,31 +101,30 @@ export class CurrentLocation extends Component {
         map: this.map,
         google: this.props.google,
         mapCenter: this.state.currentLocation
-      })
-    })
+      });
+    });
   }
 
-  render(){
+  render() {
     const style = Object.assign({}, mapStyles.map);
 
     return (
       <div>
         <div style={style} ref="map">
-          Loading map ...
+          Loading map...
         </div>
         {this.renderChildren()}
       </div>
-    )
+    );
   }
 }
-
 export default CurrentLocation;
 
 CurrentLocation.defaultProps = {
   zoom: 14,
   initialCenter: {
-    lat: 32.8138852,
-    lng: -96.7683192
+    lat: 32.8132922,
+    lng: -96.7521698
   },
   centerAroundCurrentLocation: false,
   visible: true
