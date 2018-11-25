@@ -1,78 +1,112 @@
-import React, { Component } from 'react'
-import {GoogleApiWrapper, InfoWindow, Marker} from 'google-maps-react'
-import CurrentLocation from './Map.js'
-import axios from 'axios'
+import React, { Component } from "react";
+import { Map, Marker, InfoWindow, GoogleApiWrapper } from "google-maps-react";
+//import { searchNearby } from "../utils/GoogleApi";
+import MapError from "./MapError"
 
 export class MapContainer extends Component {
   state = {
-      showingInfoWindow: false,
-      activeMarker: {},
-      selectedPlace: {},
-      venues: []
+    map: null,
+    markerProps: [],
+    activeMarker: null,
+    activeMarkerProps: null,
+    showingInfoWindow: false,
+    firstDrop: true,
+    introAnim: this.props.google.maps.Animation.BOUNCE,
+    placeCount: 0
+  }
+
+  componentDidMount = () => {}
+
+  mapReady = (props, map) => {
+    this.setState({map});
+  }
+
+  saveRealMarker = marker => {
+    this.props.saveRealMarker(marker)
+  }
+
+  componentWillReceiveProps = (props) => {
+        const placeCountChanged = this.state.placeCount !== props.places.length
+            ? true
+            : false;
+        const introAnim = !this.state.firstDrop
+            ? null
+            : this.props.google.maps.Animation.DROP;
+        const showingInfoWindow = props.activeMarker && !placeCountChanged
+            ? true
+            : false;
+
+        this.setState({firstDrop: false, introAnim, activeMarker: props.activeMarker, showingInfoWindow, placeCount: props.places.length},
+            () => {
+                if (this.state.activeMarker) this.state.activeMarker.marker.setAnimation(this.props.google.maps.Animation.BOUNCE);
+            });
+
     }
 
-  componentDidMount(){
-    this.getVenues()
-  }
-
-  onMarkerClick = (props, marker, e) => {
+  closeInfoWindow = () => {
     this.setState({
-      selectedPlace: props,
-      activeMarker: marker,
-      showingInfoWindow: true
+      showingInfoWindow: false
     })
   }
 
-  onClose = props => {
-    this.setState({
-      showingInfoWindow: false,
-      activeMarker: null
-    })
+  onMarkerClick = marker => {
+    this.props.clickMarker(marker.id)
   }
 
-  getVenues = () => {
-    const endPoint = "https://api.foursquare.com/v2/venues/explore?"
-    const parameters = {
-      client_id: "HHUV2BREYTPF4NC4ANOYCCROTNLB4FQATM4TVC4ULI4DUA0T",
-      client_secret: "B3Y3MCPEXNGDF5U03GJON1J10JIZIQIO05WAYQFO1GLPJUH0",
-      section: "food",
-      ll: "32.8132922, -96.7521698",
-      v: "20181111"
-    }
 
-    axios.get(endPoint + new URLSearchParams(parameters))
-    .then(response => {
-      this.setState({
-        venues: response.data.response.groups[0].items
-      }, this.loadMap())
-    })
-    .catch(error => {
-      console.log("Error!" + error)
-    })
-  }
-
-  render(){
+  render() {
     return (
-      <div>
-        <CurrentLocation centerAroundCurrentLocation google={this.props.google}>
-          <Marker
-            onClick = {this.onMarkerClick}
-            name = {'Lakewood Shopping Center'}
-          />
+      <div className="map">
+        <Map
+          role="application"
+          aria-label="map"
+          style={{ height: "100%", width: "75vw", position: "absolute" }}
+          //onReady={this.onReady.bind(this)}
+          onReady={this.mapReady}
+          onClick={this.closeInfoWindow}
+          google={this.props.google}
+          initialCenter={{
+              lat: 32.8124432,
+              lng: -96.7514695
+          }}
+          zoom={16}>
+          {this.props.places && this.props.places.map((place, index) => {
+            return (
+              <Marker
+                id={place.id}
+                key={place.id}
+                ref={this.saveRealMarker}
+                index={index}
+                onClick={this.onMarkerClick}
+                title={place.name}
+                name={place.name}
+                place={place}
+                //rating={place.rating}
+                address={place.location.formattedAddress}
+                animation={this.state.introAnim}
+                position={{
+                    lat: place.location.lat,
+                    lng: place.location.lng
+                }}
+              />
+            );
+          })}
           <InfoWindow
-            marker = {this.state.activeMarker}
-            visible = {this.state.showingInfoWindow}
-            onClose = {this.onClose}>
+            marker={this.state.activeMarker && this.state.activeMarker.marker}
+            visible={this.state.showingInfoWindow}
+            onClose={this.closeInfoWindow}>
             <div>
-              <h4>{this.state.selectedPlace.name}</h4>
+              <h4>{this.state.activeMarker && this.state.activeMarker.props.name}</h4>
+              <p>Address: {this.state.activeMarker && this.state.activeMarker.props.address}</p>
             </div>
           </InfoWindow>
-        </CurrentLocation>
+        </Map>
       </div>
-    )
+    );
   }
 }
 
 export default GoogleApiWrapper({
-  apiKey: 'AIzaSyAYV2FOC1UKAKyjIAibNXtcKLVb9Wo1VWU'
-})(MapContainer)
+  apiKey: "AIzaSyAYV2FOC1UKAKyjIAibNXtcKLVb9Wo1VWU",
+  LoadingContainer: MapError
+})(MapContainer);
